@@ -1,0 +1,44 @@
+---
+
+secret:
+    tiWCabc001
+
+domain_name:
+   acmeunited.com
+    
+ike_preshared_key:
+    SL2fC%.4qs
+    
+nhrp1_auth:
+    DC#&vRt@
+    
+nhrp2_auth:
+    iyKiJ8g3
+    
+admin_username:
+    admin
+    
+admin_password:
+    Sg9wmd%
+    
+snmp_ro_community:
+    j185t34
+    
+snmp_rw_community:
+    y678mmo
+
+ntp_server:
+    128.138.140.44
+    
+hub_101_public:
+    69.76.251.196
+    
+hub_102_public:
+    69.76.251.198
+    
+internal_dns_server:
+    10.114.1.22 10.114.1.57
+
+prime_server:
+    10.78.8.20
+  

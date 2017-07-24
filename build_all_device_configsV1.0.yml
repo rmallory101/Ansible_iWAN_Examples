@@ -1,0 +1,8 @@
+---
+
+
+- include: build_firewalls.yml
+- include: build_hubs.yml
+- include: build_spokes.yml
+- include: build_dcswitches.yml
+- include: build_remote_switches.yml

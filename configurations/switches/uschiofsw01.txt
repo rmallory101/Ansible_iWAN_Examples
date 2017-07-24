@@ -1,0 +1,125 @@
+hostname uschiofsw01
+!
+enable secret tiWCabc001
+!
+username admin privilege 15 secret Sg9wmd%
+no aaa new-model
+!
+no ip domain-lookup
+ip domain-name acmeunited.com
+!
+vtp mode off
+!
+crypto key generate rsa gen mod 2048
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+!
+vlan 100
+  name management
+vlan 101
+  name wireless
+vlan 102
+  name guest
+vlan 103
+  name wired
+vlan 104
+  name voice
+!
+interface GigabitEthernet 1/0/1
+  description Router WAN Uplink 1
+  switchport mode trunk
+  switchport trunk native vlan 100
+  switchport nonegotiate
+  no shut
+!
+interface GigabitEthernet 1/0/2
+  description AP WLC
+  switchport mode trunk
+  switchport trunk native vlan 100
+  switchport nonegotiate
+  no shut
+!
+!
+interface range GigabitEthernet1/0/3-46
+  switchport mode access
+  switchport access vlan 103
+  switchport voice vlan 104
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+!
+interface range GigabitEthernet2/0/1-46
+  switchport mode access
+  switchport access vlan 103
+  switchport voice vlan 104
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+!
+interface range GigabitEthernet3/0/1-46
+  switchport mode access
+  switchport access vlan 103
+  switchport voice vlan 104
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+!
+!
+interface range GigabitEthernet1/0/47-48
+  switchport mode access
+  switchport access vlan 100
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+interface range GigabitEthernet2/0/47-48
+  switchport mode access
+  switchport access vlan 100
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+interface range GigabitEthernet3/0/47-48
+  switchport mode access
+  switchport access vlan 100
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+!
+interface Vlan1
+ shutdown
+ no ip address
+!
+interface Vlan100
+ ip address 10.195.0.10 255.255.255.192
+ no shut
+!
+ip default-gateway 10.195.0.1
+ip route 0.0.0.0 0.0.0.0 10.195.0.1
+!
+no ip http server
+no ip http secure-server
+!
+access-list 98 permit 10.78.8.20
+access-list 99 permit 10.78.8.20
+!
+snmp-server community j185t34 RO 98
+snmp-server community y678mmo RW 99
+!
+line con 0
+ session-timeout 5
+ exec-timeout 20 0
+ logging synchronous
+ transport output telnet ssh
+ stopbits 1
+ no login
+line vty 0 15
+ session-timeout 60
+ exec-timeout 30 0
+ logging synchronous
+ login local
+ length 0
+ transport input telnet ssh
+ transport output telnet ssh
+!
+ntp server 128.138.140.44
+end

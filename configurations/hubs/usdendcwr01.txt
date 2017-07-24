@@ -1,0 +1,179 @@
+!
+hostname usdendcwr01
+!
+vrf definition frontdoor
+ !
+ address-family ipv4
+ exit-address-family
+!
+vlan 100
+ name management
+vlan 101
+ name servers
+!
+exit
+!
+enable secret tiWCabc001
+!
+vtp domain daikin
+!
+username admin privilege 15 secret Sg9wmd%
+no aaa new-model
+!
+no ip domain-lookup
+ip domain-name acmeunited.com
+!
+crypto ikev2 keyring DMVPN
+ peer ANY
+  address 0.0.0.0 0.0.0.0
+  pre-shared-key SL2fC%.4qs
+!
+crypto ipsec transform-set AES/SHA/TRANSPORT esp-aes esp-sha-hmac 
+ mode tunnel
+!
+crypto ikev2 profile DMVPN
+ match fvrf frontdoor
+ match identity remote any
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local DMVPN
+!
+crypto ipsec profile DMVPN
+ set transform-set AES/SHA/TRANSPORT 
+ set ikev2-profile DMVPN
+!
+interface Tunnel101 
+ ip address 10.195.252.1 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nhrp authentication DC#&vRt@
+ ip nhrp map multicast dynamic
+ ip nhrp network-id 101
+ ip nhrp holdtime 600
+ ip nhrp redirect
+ ip tcp adjust-mss 1360
+ tunnel source vlan 900
+ tunnel mode gre multipoint
+ tunnel key 1
+ tunnel vrf frontdoor
+ tunnel protection ipsec profile DMVPN ikev2-profile DMVPN
+ no shut
+!
+interface vlan 100
+ ip address 10.195.8.2 255.255.255.192
+ standby 1 ip 10.195.8.1
+ standby 1 preempt
+ standby 1 priority 101
+ no shut
+interface vlan 101
+ ip address 10.195.9.2 255.255.255.0
+ standby 1 ip 10.195.9.1
+ standby 1 preempt
+ standby 1 priority 101
+ no shut
+!
+interface Vlan1
+ shutdown
+ no ip address
+!
+interface gigabitethernet 0/0/2
+ description To Inside ASA
+ ip address 10.195.8.69 255.255.255.252
+ no shut
+!
+interface gigabitethernet 0/1/0
+ description LAN interface
+ switchport mode trun
+  switchport trunk native vlan 100
+ no shut
+!
+interface gigabitethernet 0/1/1
+ description To Outside ASA
+ switchport access vlan 900
+ switchport host
+ no shut
+!
+interface gigabitethernet 0/1/2
+ description External Interface
+ switchport access vlan 900
+ switchport host
+ no shut
+!
+interface vlan900
+  description External VLAN
+  vrf forwarding frontdoor
+  ip address 69.195.251.196 255.255.255.240
+  no shut
+! 
+!
+interface loopback 0
+ description loopback interface
+ ip address 10.195.255.1 255.255.255.255
+!
+router eigrp internal_eigrp
+ !
+ address-family ipv4 unicast autonomous-system 100
+  !
+  af-interface default
+   passive-interface
+  exit-af-interface
+  !
+  af-interface tunnel 101
+   summary-address 10.195.8.0 255.255.252.0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Loopback0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface GigabitEthernet0/0/2
+   no passive-interface
+  exit-af-interface
+  !
+  topology base
+   no default-information out
+   redistribute connected
+  exit-af-topology
+  network 10.195.252.1 0.0.0.0
+  network 10.195.255.1 0.0.0.0
+  network 10.195.8.69 0.0.0.0
+ exit-address-family
+!
+!
+crypto key generate rsa gen mod 2048
+no ip http server
+no ip http secure-server
+!
+ip nat inside source list 101 interface gigabitethernet 0/0/0  vrf frontdoor overload
+!
+snmp-server community j185t34 RO 98
+snmp-server community y678mmo RW 99
+!
+access-list 98 permit 10.78.8.20
+access-list 99 permit 10.78.8.20
+!
+ip route vrf frontdoor 0.0.0.0 0.0.0.0 69.195.251.193
+ip route vrf frontdoor 10.195.8.0  255.255.252.0 69.195.251.197
+!
+ip ssh version 2
+!
+line con 0
+ session-timeout 5
+ exec-timeout 20 0
+ logging synchronous
+ no login
+ privilege level 15
+ transport output telnet ssh
+ stopbits 1
+line vty 0 15
+ session-timeout 60
+ exec-timeout 30 0
+ login local
+ logging synchronous
+ length 0
+ transport input telnet ssh
+ transport output telnet ssh
+!
+ntp server 128.138.140.44
+end

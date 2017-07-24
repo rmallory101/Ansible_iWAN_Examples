@@ -1,0 +1,8 @@
+---
+
+- name: Build Spoke Configs
+  hosts: spokes
+  tasks:
+
+    # Create config files
+    - template: src=templates/spoke_Template.j2 dest=configurations/spokes/{{ inventory_hostname }}.txt

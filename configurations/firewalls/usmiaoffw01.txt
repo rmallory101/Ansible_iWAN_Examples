@@ -1,0 +1,93 @@
+!
+hostname usmiaoffw01
+domain-name acmeunited.com
+enable password tiWCabc001
+username admin password Sg9wmd% privilege 15
+no names
+!
+crypto key generate rsa modulus 1024
+!
+interface GigabitEthernet0/0
+ description External Facing Interface
+ nameif outside
+ security-level 0
+ ip address 10.195.0.66 255.255.255.252
+ no shut
+!
+interface GigabitEthernet0/1
+ description Internal Facing Interface
+ nameif inside
+ security-level 100
+ ip address 10.195.0.70 255.255.255.252
+ no shut
+!
+interface Management0/0
+ip address 10.195.0.12 255.255.255.192
+no shut
+!
+ftp mode passive
+clock timezone CST -6
+clock summer-time CDT recurring
+!
+access-list default_only permit 0.0.0.0 255.255.255.255 
+!
+router eigrp 100
+ network 0.0.0.0 0.0.0.0
+ passive-interface default
+ no passive-interface inside
+ redistribute static
+ distribute-list default_only out
+!
+dns server-group DefaultDNS 
+ domain-name acmeunited.com
+object-group network internal
+ network-object 10.195.0.0 255.255.252.0
+ network-object host 10.195.255.20
+!
+access-list outside_access_in extended permit tcp any eq ssh interface outside log
+access-list outside_access_in extended permit tcp any eq https interface outside log
+access-list outside_access_in extended permit icmp any any log
+access-list inside_access_out extended permit ip object-group internal any  log
+access-list inside_access_out extended permit icmp object-group internal any log
+!
+route outside 0.0.0.0 0.0.0.0 10.195.0.65 1 
+!
+logging enable
+logging buffer-size 16386
+logging buffered informational
+logging trap informational
+logging host inside 10.78.8.20
+!
+aaa authentication telnet console LOCAL 
+aaa authentication ssh console LOCAL 
+aaa authentication http console LOCAL 
+aaa authentication enable console LOCAL 
+aaa authorization command LOCAL 
+aaa local authentication attempts max-fail 5
+aaa authorization exec LOCAL auto-enable
+http server enable
+http server idle-timeout 10
+http server session-timeout 10
+http 0.0.0.0 0.0.0.0 inside
+icmp permit any inside
+snmp-server location Miami
+snmp-server contact Internal Operations
+snmp-server community j185t34
+snmp-server enable traps snmp authentication linkup linkdown coldstart warmstart
+snmp-server enable traps entity fan-failure power-supply cpu-temperature
+snmp-server enable traps memory-threshold
+snmp-server enable traps interface-threshold
+snmp-server enable traps connection-limit-reached
+snmp-server enable traps cpu threshold rising
+!
+access-group inside_access_out in interface inside
+access-group outside_access_in in interface outside
+!
+telnet timeout 30
+no ssh stricthostkeycheck
+ssh 0.0.0.0 0.0.0.0 inside
+ssh timeout 30
+ssh version 2
+console timeout 10
+!
+ntp server 128.138.140.44 source outside

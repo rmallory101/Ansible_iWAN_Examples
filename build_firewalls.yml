@@ -1,0 +1,8 @@
+---
+
+- name: Build Firewall Configs
+  hosts: firewalls
+  tasks:
+
+    # Create config files
+    - template: src=templates/asa_Template.j2 dest=configurations/firewalls/{{ inventory_hostname }}.txt

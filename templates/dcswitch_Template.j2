@@ -1,0 +1,93 @@
+hostname {{ inventory_hostname }}
+!
+enable secret {{ secret }}
+!
+username {{ admin_username }} privilege 15 secret {{ admin_password }}
+no aaa new-model
+!
+no ip domain-lookup
+ip domain-name {{ domain_name }}
+!
+vtp mode off
+!
+crypto key generate rsa gen mod 2048
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+!
+{% for vlan in named_vlans %}
+vlan {{ vlan.vlan_id }}
+  name {{ vlan.vlan_name }}
+{% endfor %}
+!
+{% for interfaces in trunked_interfaces %}
+interface {{ interfaces.interface }}
+  description {{ interfaces.description }}
+  switchport mode trunk
+  switchport trunk native vlan {{ interfaces.Untagged_VLAN }}
+  switchport nonegotiate
+!
+{% endfor %}
+!
+{% for interfaces in interface_ranges %}
+interface range {{ interfaces.range }}
+  switchport mode access
+  switchport access vlan {{ interfaces.access_vlan }}
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+!
+{% endfor %}
+!
+interface Vlan1
+ shutdown
+ no ip address
+!
+interface Vlan100
+ ip address {{ vlan_100_ip }}
+ no shut
+!
+interface gig 2/0/3
+  description iWAN Controller
+  switchport access vlan 100
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+!
+interface gig 1/0/2
+  description Cisco Prime Server
+  switchport access vlan 100
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+!
+ip default-gateway {{ default_gateway }}
+ip route 0.0.0.0 0.0.0.0 {{ default_gateway }}
+!
+no ip http server
+no ip http secure-server
+!
+access-list 98 permit {{ prime_server }}
+access-list 99 permit {{ prime_server }}
+!
+snmp-server community {{ snmp_ro_community }} RO 98
+snmp-server community {{ snmp_rw_community }} RW 99
+!
+line con 0
+ session-timeout 5
+ exec-timeout 20 0
+ logging synchronous
+ no login
+ privilege level 15
+ transport output telnet ssh
+ stopbits 1
+line vty 0 15
+ session-timeout 60
+ exec-timeout 30 0
+ logging synchronous
+ login local
+ length 0
+ transport input telnet ssh
+ transport output telnet ssh
+!
+ntp server {{  ntp_server }}
+end

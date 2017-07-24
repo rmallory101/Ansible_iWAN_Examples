@@ -1,0 +1,175 @@
+!
+hostname {{ inventory_hostname }}
+!
+vrf definition frontdoor
+ !
+ address-family ipv4
+ exit-address-family
+!
+{% for vlan_id in named_vlans %}
+vlan {{  vlan_id.vlan_id }}
+ name {{ vlan_id.vlan_name }}
+{% endfor %}
+!
+exit
+!
+enable secret {{ secret }}
+!
+vtp domain daikin
+!
+username {{ admin_username }} privilege 15 secret {{ admin_password }}
+no aaa new-model
+!
+no ip domain-lookup
+ip domain-name {{ domain_name }}
+!
+crypto ikev2 keyring DMVPN
+ peer ANY
+  address 0.0.0.0 0.0.0.0
+  pre-shared-key {{ ike_preshared_key }}
+!
+crypto ipsec transform-set AES/SHA/TRANSPORT esp-aes esp-sha-hmac 
+ mode tunnel
+!
+crypto ikev2 profile DMVPN
+ match fvrf frontdoor
+ match identity remote any
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local DMVPN
+!
+crypto ipsec profile DMVPN
+ set transform-set AES/SHA/TRANSPORT 
+ set ikev2-profile DMVPN
+!
+interface Tunnel{{ tunnel_number }} 
+ ip address {{ hub_ip }} 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nhrp authentication {{ nhrp_auth }}
+ ip nhrp map multicast dynamic
+ ip nhrp network-id {{ network_id }}
+ ip nhrp holdtime 600
+ ip nhrp redirect
+ ip tcp adjust-mss 1360
+ tunnel source vlan 900
+ tunnel mode gre multipoint
+ tunnel key {{ tunnel_key }}
+ tunnel vrf frontdoor
+ tunnel protection ipsec profile DMVPN ikev2-profile DMVPN
+ no shut
+!
+{% for vlan_id in l3_vlans %}
+interface vlan {{  vlan_id.vlan_id }}
+ ip address {{ vlan_id.vlan_ip }}
+ standby 1 ip {{ vlan_id.standby_ip }}
+ standby 1 preempt
+ standby 1 priority {{ vlan_id.priority }}
+ no shut
+{% endfor %}
+!
+interface Vlan1
+ shutdown
+ no ip address
+!
+interface gigabitethernet 0/0/2
+ description To Inside ASA
+ ip address {{  router_inside_interface_ip  }} 255.255.255.252
+ no shut
+!
+interface gigabitethernet 0/1/0
+ description LAN interface
+ switchport mode trun
+  switchport trunk native vlan 100
+ no shut
+!
+interface gigabitethernet 0/1/1
+ description To Outside ASA
+ switchport access vlan 900
+ switchport host
+ no shut
+!
+interface gigabitethernet 0/1/2
+ description External Interface
+ switchport access vlan 900
+ switchport host
+ no shut
+!
+interface vlan900
+  description External VLAN
+  vrf forwarding frontdoor
+  ip address {{ vlan900 }}
+  no shut
+! 
+!
+interface loopback 0
+ description loopback interface
+ ip address {{ local_loopback0 }} 255.255.255.255
+!
+router eigrp internal_eigrp
+ !
+ address-family ipv4 unicast autonomous-system 100
+  !
+  af-interface default
+   passive-interface
+  exit-af-interface
+  !
+  af-interface tunnel {{ tunnel_number }}
+   summary-address {{ local_lan_range }} 255.255.252.0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Loopback0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface GigabitEthernet0/0/2
+   no passive-interface
+  exit-af-interface
+  !
+  topology base
+   no default-information out
+   redistribute connected
+  exit-af-topology
+  network {{ hub_ip }} 0.0.0.0
+  network {{ local_loopback0 }} 0.0.0.0
+  network {{ router_inside_interface_ip  }} 0.0.0.0
+ exit-address-family
+!
+!
+crypto key generate rsa gen mod 2048
+no ip http server
+no ip http secure-server
+!
+ip nat inside source list 101 interface gigabitethernet 0/0/0  vrf frontdoor overload
+!
+snmp-server community {{ snmp_ro_community }} RO 98
+snmp-server community {{ snmp_rw_community }} RW 99
+!
+access-list 98 permit {{ prime_server }}
+access-list 99 permit {{ prime_server }}
+!
+ip route vrf frontdoor 0.0.0.0 0.0.0.0 {{ vrf_default_gateway }}
+ip route vrf frontdoor {{ local_lan_range }}  255.255.252.0 {{ asa_outside_interface_ip }}
+!
+ip ssh version 2
+!
+line con 0
+ session-timeout 5
+ exec-timeout 20 0
+ logging synchronous
+ no login
+ privilege level 15
+ transport output telnet ssh
+ stopbits 1
+line vty 0 15
+ session-timeout 60
+ exec-timeout 30 0
+ login local
+ logging synchronous
+ length 0
+ transport input telnet ssh
+ transport output telnet ssh
+!
+ntp server {{  ntp_server }}
+end

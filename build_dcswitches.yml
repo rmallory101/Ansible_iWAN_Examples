@@ -1,0 +1,9 @@
+---
+
+- name: Build DMVPN Remote Switch Configs
+  hosts: dc_switches
+    
+  tasks:
+
+    # Create config files
+    - template: src=templates/dcswitch_Template.j2 dest=configurations/switches/{{ inventory_hostname }}.txt

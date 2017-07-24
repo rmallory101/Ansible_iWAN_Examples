@@ -1,0 +1,93 @@
+---
+
+
+named_vlans:
+  - { vlan_id: 100, vlan_name: management }
+  - { vlan_id: 101, vlan_name: wireless }
+  - { vlan_id: 102, vlan_name: guest }
+  - { vlan_id: 102, vlan_name: wired }
+     
+l3_vlans:
+  - { vlan_id: 100, description: Management, vlan_ip:  10.195.112.1 255.255.255.192 }
+  - { vlan_id: 101, description: Wireless, vlan_ip: 10.195.112.129 255.255.255.192  }
+  - { vlan_id: 102, description: Guest, vlan_ip:  10.195.112.193 255.255.255.192 }
+  - { vlan_id: 103, description: Wired, vlan_ip: 10.195.113.1 255.255.255.0  }
+  - { vlan_id: 104, description: Voice, vlan_ip: 10.196.114.1 255.255.255.128  }
+    
+local_lan_range:
+    10.195.112.0
+
+vrf_default_gateway1:
+    192.168.1.1
+    
+vrf_default_gateway2:
+    192.168.2.1
+
+circuit_1_ip:
+    192.168.1.2
+    
+circuit_2_ip:
+    192.168.2.2
+
+tunnel_101_ip:
+    10.195.252.6
+
+tunnel_102_ip:
+    10.195.253.6
+    
+hub_ip_101:
+    10.195.252.1
+    
+hub_ip_102:
+    10.195.253.1
+    
+local_loopback0_ip:
+    10.195.255.50
+    
+asa_inside_interface_ip:
+    10.195.112.70
+    
+asa_outside_interface_ip:
+    10.195.112.66
+  
+vlan998:
+    10.195.112.69
+    
+vlan999:
+    10.195.112.65
+    
+dhcp_range_wired:
+    10.195.113.0 /24
+    
+dhcp_excluded_range_wired:
+    10.195.113.1 10.195.113.9
+    
+dhcp_default_router_wired:
+    10.195.113.1
+    
+dhcp_range_management:
+    10.195.112.0 /26
+    
+dhcp_excluded_range_management:
+    10.195.112.1 10.195.112.9
+    
+dhcp_default_router_management:
+    10.195.112.1
+    
+dhcp_range_wireless:
+    10.195.112.128 /26
+    
+dhcp_excluded_range_wireless:
+    10.195.112.129 10.195.113.132
+    
+dhcp_default_router_wireless:
+    10.195.112.129
+    
+dhcp_range_guest:
+    10.195.112.192 /26
+    
+dhcp_excluded_range_guest:
+    10.195.112.193 10.195.112.195
+    
+dhcp_default_router_guest:
+    10.195.112.193

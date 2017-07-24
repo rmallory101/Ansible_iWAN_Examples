@@ -1,0 +1,20 @@
+---
+
+
+named_vlans:
+    - { vlan_id: 100, vlan_name: management }
+    - { vlan_id: 101, vlan_name: servers }
+
+trunked_interfaces:
+    - { interface: GigabitEthernet 1/0/1, description: Router WAN Uplink 1, Untagged_VLAN: 100, Tagged_VLAN: 101 }
+    - { interface: GigabitEthernet 2/0/1, description: Router WAN Uplink 2, Untagged_VLAN: 100, Tagged_VLAN: 101 }
+
+interface_ranges:
+    - { range: GigabitEthernet1/0/2-48,  access_vlan: 101}
+    - { range: GigabitEthernet2/0/2-48,  access_vlan: 101}
+
+default_gateway:
+    10.195.8.1
+  
+vlan_100_ip:
+    10.195.8.10 255.255.255.192

@@ -1,0 +1,101 @@
+hostname usdendcsw01
+!
+enable secret tiWCabc001
+!
+username admin privilege 15 secret Sg9wmd%
+no aaa new-model
+!
+no ip domain-lookup
+ip domain-name acmeunited.com
+!
+vtp mode off
+!
+crypto key generate rsa gen mod 2048
+!
+spanning-tree mode rapid-pvst
+spanning-tree extend system-id
+!
+vlan 100
+  name management
+vlan 101
+  name servers
+!
+interface GigabitEthernet 1/0/1
+  description Router WAN Uplink 1
+  switchport mode trunk
+  switchport trunk native vlan 100
+  switchport nonegotiate
+!
+interface GigabitEthernet 2/0/1
+  description Router WAN Uplink 2
+  switchport mode trunk
+  switchport trunk native vlan 100
+  switchport nonegotiate
+!
+!
+interface range GigabitEthernet1/0/2-48
+  switchport mode access
+  switchport access vlan 101
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+!
+interface range GigabitEthernet2/0/2-48
+  switchport mode access
+  switchport access vlan 101
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+!
+!
+interface Vlan1
+ shutdown
+ no ip address
+!
+interface Vlan100
+ ip address 10.195.8.10 255.255.255.192
+ no shut
+!
+interface gig 2/0/3
+  description iWAN Controller
+  switchport access vlan 100
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+!
+interface gig 1/0/2
+  description Cisco Prime Server
+  switchport access vlan 100
+  spanning-tree bpduguard enable
+  spanning-tree portfast
+  no shut
+!
+ip default-gateway 10.195.8.1
+ip route 0.0.0.0 0.0.0.0 10.195.8.1
+!
+no ip http server
+no ip http secure-server
+!
+access-list 98 permit 10.78.8.20
+access-list 99 permit 10.78.8.20
+!
+snmp-server community j185t34 RO 98
+snmp-server community y678mmo RW 99
+!
+line con 0
+ session-timeout 5
+ exec-timeout 20 0
+ logging synchronous
+ no login
+ privilege level 15
+ transport output telnet ssh
+ stopbits 1
+line vty 0 15
+ session-timeout 60
+ exec-timeout 30 0
+ logging synchronous
+ login local
+ length 0
+ transport input telnet ssh
+ transport output telnet ssh
+!
+ntp server 128.138.140.44
+end

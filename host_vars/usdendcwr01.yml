@@ -1,0 +1,52 @@
+---
+
+
+named_vlans:
+  - { vlan_id: 100, vlan_name: management }
+  - { vlan_id: 101, vlan_name: servers }
+  
+tunnel_number:
+    101
+    
+network_id:
+    101
+    
+tunnel_key:
+    1
+
+nhrp_auth:
+    DC#&vRt@
+
+vrf_default_gateway:
+   69.195.251.193
+
+hub_ip:
+    10.195.252.1
+    
+asa_inside_interface_ip:
+    10.195.8.70
+    
+asa_outside_interface_ip:
+    69.195.251.197
+    
+router_inside_interface_ip:
+    10.195.8.69
+    
+vlan900:
+    69.195.251.196 255.255.255.240
+    
+local_lan_range:
+    10.195.8.0
+    
+local_loopback0:
+    10.195.255.1
+
+l3_vlans:
+  - { vlan_id: 100, description: Management, vlan_ip: 10.195.8.2 255.255.255.192, priority: 101, standby_ip: 10.195.8.1 }
+  - { vlan_id: 101, description: Servers, vlan_ip: 10.195.9.2 255.255.255.0, priority: 101, standby_ip: 10.195.9.1  }
+
+
+
+
+
+    

@@ -1,0 +1,252 @@
+!
+hostname usmiaofwr01
+!
+vrf definition frontdoor
+ !
+ address-family ipv4
+ exit-address-family
+!
+enable secret tiWCabc001
+!
+username admin privilege 15 secret Sg9wmd%
+no aaa new-model
+!
+!
+vlan 100
+ name management
+vlan 101
+ name wireless
+vlan 102
+ name guest
+vlan 103
+ name wired
+vlan 104
+ name voice
+!
+interface vlan 100
+ ip address 10.195.0.1 255.255.255.192
+ no shut
+interface vlan 101
+ ip address 10.195.0.129 255.255.255.192
+ no shut
+interface vlan 102
+ ip address 10.195.0.193 255.255.255.192
+ no shut
+interface vlan 103
+ ip address 10.195.1.1 255.255.255.0
+ no shut
+interface vlan 104
+ ip address 10.196.2.1 255.255.255.128
+ no shut
+!
+no ip domain-lookup
+ip domain-name acmeunited.com
+! 
+crypto ikev2 keyring DMVPN
+peer ANY
+  address 0.0.0.0 0.0.0.0
+  pre-shared-key SL2fC%.4qs
+!
+crypto ikev2 profile DMVPN
+ match fvrf frontdoor
+ match identity remote any
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local DMVPN
+!
+crypto ipsec transform-set AES/SHA/TRANSPORT esp-aes esp-sha-hmac 
+ mode tunnel
+!
+crypto ipsec profile DMVPN
+ set transform-set AES/SHA/TRANSPORT 
+ set ikev2-profile DMVPN
+!
+interface Tunnel101 
+ ip address 10.195.252.3 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nhrp authentication DC#&vRt@
+ ip nhrp map 10.195.252.1 69.76.251.196
+ ip nhrp map multicast 69.76.251.196
+ ip nhrp network-id 101
+ ip nhrp holdtime 600
+ ip nhrp nhs 10.195.252.1
+ ip nhrp registration no-unique
+ ip nhrp shortcut
+ ip nhrp redirect
+ ip tcp adjust-mss 1360
+ tunnel source gigabitethernet 0/0/0
+ tunnel mode gre multipoint
+ tunnel vrf frontdoor
+ tunnel key 1
+ tunnel protection ipsec profile DMVPN ikev2-profile DMVPN
+!
+interface Tunnel102
+ ip address 10.195.253.3 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nhrp authentication iyKiJ8g3
+ ip nhrp map 10.195.253.1 69.76.251.198
+ ip nhrp map multicast 69.76.251.198
+ ip nhrp network-id 102
+ ip nhrp nhs 10.195.253.1
+ ip nhrp holdtime 600
+ ip nhrp registration no-unique
+ ip nhrp shortcut
+ ip nhrp redirect
+ ip tcp adjust-mss 1360
+ tunnel source gigabitethernet 0/0/2
+ tunnel mode gre multipoint
+ tunnel vrf frontdoor
+ tunnel key 2
+ tunnel protection ipsec profile DMVPN ikev2-profile DMVPN
+ !
+ip route vrf frontdoor 0.0.0.0 0.0.0.0 96.80.96.158
+ip route vrf frontdoor 0.0.0.0 0.0.0.0 12.110.251.217
+ip route vrf frontdoor 10.195.0.0  255.255.252.0 10.195.0.66
+!
+interface vlan 999
+ description Outside ASA Interface
+ vrf forwarding frontdoor
+ ip address 10.195.0.65 255.255.255.252
+ ip nat inside
+ no shut
+!
+interface vlan 998
+ description Inside ASA Interface
+ ip address 10.195.0.69 255.255.255.252
+ no shut
+!
+interface gigabitethernet 0/0/0
+ description Circuit 1 DMVPN Interface
+ vrf forwarding frontdoor
+ ip address 96.80.96.157 255.255.255.252 
+ ip nat outside
+ no shut
+!
+interface gigabitethernet 0/0/2
+ description DMVPN Interface
+ vrf forwarding frontdoor
+ ip address 12.110.251.216 255.255.255.248
+ ip nat outside
+ no shut
+!
+interface gigabitethernet 0/1/0
+ description LAN interface
+ switchport mode trunk
+ switchport trunk native vlan 100
+ no shut
+!
+interface gig 0/1/1
+  description Outside ASA Interface
+ switch access vlan 999
+no shut
+!
+interface gig 0/1/2
+  description Inside ASA Interface
+ switch access vlan 998
+no shut
+!
+interface loopback 0
+ description loopback interface
+ ip address 10.195.255.3 255.255.255.0
+!
+router eigrp daikin
+ !
+ address-family ipv4 unicast autonomous-system 100
+  !
+  af-interface default
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Tunnel101
+   summary-address 10.195.0.0 255.255.252.0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Tunnel102
+   summary-address 10.195.0.0 255.255.252.0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Loopback0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface vlan998
+   no passive-interface
+  exit-af-interface
+ 
+  topology base
+   no default-information out
+   redistribute connected
+  exit-af-topology
+  network 10.195.252.3 0.0.0.0
+  network 10.195.253.3 0.0.0.0
+  network 10.195.255.3 0.0.0.0
+  network 10.195.0.69 0.0.0.0
+ exit-address-family
+!
+crypto key generate rsa gen mod 2048
+!
+access-list 101 permit ip any any
+access-list 102 permit ip any any
+!
+ip dhcp excluded-address 10.195.1.1 10.195.1.9
+ip dhcp pool wired_dhcp
+ network 10.195.113.0 /24
+ import all
+ default-router 10.195.1.1
+ dns-server 10.114.1.22 10.114.1.57
+!
+ip dhcp excluded-address 10.195.0.1 10.195.0.9
+ip dhcp pool management_dhcp
+ network 10.195.0.0 /26
+ import all
+ default-router 10.195.0.1
+ dns-server 10.114.1.22 10.114.1.57
+!
+ip dhcp excluded-address 10.195.0.129 10.195.1.132
+ip dhcp pool wireless_dhcp
+ network 10.195.0.128 /26
+ import all
+ default-router 10.195.0.129
+ dns-server 10.114.1.22 10.114.1.57
+!
+ip dhcp excluded-address 10.195.0.193 10.195.0.195
+ip dhcp pool guest_dhcp
+ network 10.195.0.192 /26
+ import all
+ default-router 10.195.0.193
+ dns-server 10.114.1.22 10.114.1.57
+!
+no ip http server
+no ip http secure-server
+!
+ip nat inside source list 101 interface gig0/0/0 vrf frontdoor overload
+ip nat inside source list 102 interface gig0/0/2 vrf frontdoor overload
+!
+snmp-server community j185t34 RO 98
+snmp-server community y678mmo RW 99
+!
+access-list 98 permit 10.78.8.20
+access-list 99 permit 10.78.8.20
+!
+line con 0
+ session-timeout 5
+ exec-timeout 20 0
+ logging synchronous
+ login local
+ transport output telnet ssh
+ stopbits 1
+line vty 0 15
+ session-timeout 60
+ exec-timeout 30 0
+ login local
+ logging synchronous
+ length 0
+ transport input telnet ssh
+ transport output telnet ssh
+!
+ntp server 128.138.140.44
+end

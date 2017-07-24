@@ -1,0 +1,29 @@
+---
+
+
+named_vlans:
+  - { vlan_id: 100, vlan_name: management }
+  - { vlan_id: 101, vlan_name: wireless }
+  - { vlan_id: 102, vlan_name: guest }
+  - { vlan_id: 103, vlan_name: wired }
+  - { vlan_id: 104, vlan_name: voice }
+
+trunked_interfaces:
+    - { interface: GigabitEthernet 1/0/1, description: Router WAN Uplink 1, Untagged_VLAN: 100, Tagged_VLAN: 101-104 }
+    - { interface: GigabitEthernet 1/0/2, description: AP WLC, Untagged_VLAN: 100, Tagged_VLAN: 101-102 }
+
+interface_ranges:
+    - { range: GigabitEthernet1/0/3-46,  access_vlan: 103, voice_vlan: 104}
+    - { range: GigabitEthernet2/0/1-46,  access_vlan: 103, voice_vlan: 104}
+    - { range: GigabitEthernet3/0/1-46,  access_vlan: 103, voice_vlan: 104}
+    
+ap_interfaces:
+    - { range: GigabitEthernet1/0/47-48,  access_vlan: 100}
+    - { range: GigabitEthernet2/0/47-48,  access_vlan: 100}
+    - { range: GigabitEthernet3/0/47-48,  access_vlan: 100}
+
+default_gateway:
+    10.195.0.1
+  
+vlan_100_ip:
+    10.195.0.10 255.255.255.192

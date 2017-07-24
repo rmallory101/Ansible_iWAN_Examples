@@ -1,0 +1,24 @@
+[all:vars]
+ansible_connection = local
+
+[remote_switches]
+usmiaofsw01
+uschiofsw01
+
+[dc_switches]
+usdendcsw01
+
+[spokes]
+usmiaofwr01
+uschiofwr01
+
+[hubs]
+usdendcwr01
+usdendcwr02
+
+[firewalls]
+usdendcfw01
+usdendcfw02
+usmiaoffw01
+uschioffw01
+

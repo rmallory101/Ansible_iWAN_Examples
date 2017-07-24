@@ -1,0 +1,23 @@
+---
+
+
+inside:
+    10.195.8.70 255.255.255.252
+    
+outside:
+    69.195.251.197 255.255.255.240
+    
+router_outside:
+    69.195.251.198
+    
+asa_mgmt_ip:
+    10.195.8.12 255.255.255.192
+    
+local_internal_range:
+    10.195.8.0 255.255.252.0
+    
+router_loopback_ip:
+    10.195.255.1
+    
+site_name:
+    Denver

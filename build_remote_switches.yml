@@ -1,0 +1,9 @@
+---
+
+- name: Build Switch Configs
+  hosts: remote_switches
+    
+  tasks:
+
+    # Create config files
+    - template: src=templates/remoteswitch_Template.j2 dest=configurations/switches/{{ inventory_hostname }}.txt

@@ -1,0 +1,236 @@
+!
+hostname {{ inventory_hostname }}
+!
+vrf definition frontdoor
+ !
+ address-family ipv4
+ exit-address-family
+!
+enable secret {{ secret }}
+!
+username {{ admin_username }} privilege 15 secret {{ admin_password }}
+no aaa new-model
+!
+!
+{% for vlan_id in named_vlans %}
+vlan {{  vlan_id.vlan_id }}
+ name {{ vlan_id.vlan_name }}
+{% endfor %}
+!
+{% for vlan_id in l3_vlans %}
+interface vlan {{  vlan_id.vlan_id }}
+ ip address {{ vlan_id.vlan_ip }}
+ no shut
+{% endfor %}
+!
+no ip domain-lookup
+ip domain-name {{ domain_name }}
+! 
+crypto ikev2 keyring DMVPN
+peer ANY
+  address 0.0.0.0 0.0.0.0
+  pre-shared-key {{ ike_preshared_key }}
+!
+crypto ikev2 profile DMVPN
+ match fvrf frontdoor
+ match identity remote any
+ authentication remote pre-share
+ authentication local pre-share
+ keyring local DMVPN
+!
+crypto ipsec transform-set AES/SHA/TRANSPORT esp-aes esp-sha-hmac 
+ mode tunnel
+!
+crypto ipsec profile DMVPN
+ set transform-set AES/SHA/TRANSPORT 
+ set ikev2-profile DMVPN
+!
+interface Tunnel101 
+ ip address {{ tunnel_101_ip }} 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nhrp authentication {{ nhrp1_auth }}
+ ip nhrp map {{ hub_ip_101 }} {{ hub_101_public }}
+ ip nhrp map multicast {{ hub_101_public  }}
+ ip nhrp network-id 101
+ ip nhrp holdtime 600
+ ip nhrp nhs {{ hub_ip_101 }}
+ ip nhrp registration no-unique
+ ip nhrp shortcut
+ ip nhrp redirect
+ ip tcp adjust-mss 1360
+ tunnel source gigabitethernet 0/0/0
+ tunnel mode gre multipoint
+ tunnel vrf frontdoor
+ tunnel key 1
+ tunnel protection ipsec profile DMVPN ikev2-profile DMVPN
+!
+interface Tunnel102
+ ip address {{ tunnel_102_ip }} 255.255.255.0
+ no ip redirects
+ ip mtu 1400
+ ip nhrp authentication {{ nhrp2_auth }}
+ ip nhrp map {{ hub_ip_102 }} {{ hub_102_public }}
+ ip nhrp map multicast {{ hub_102_public  }}
+ ip nhrp network-id 102
+ ip nhrp nhs {{ hub_ip_102 }}
+ ip nhrp holdtime 600
+ ip nhrp registration no-unique
+ ip nhrp shortcut
+ ip nhrp redirect
+ ip tcp adjust-mss 1360
+ tunnel source gigabitethernet 0/0/2
+ tunnel mode gre multipoint
+ tunnel vrf frontdoor
+ tunnel key 2
+ tunnel protection ipsec profile DMVPN ikev2-profile DMVPN
+ !
+ip route vrf frontdoor 0.0.0.0 0.0.0.0 {{ vrf_default_gateway1 }}
+ip route vrf frontdoor 0.0.0.0 0.0.0.0 {{ vrf_default_gateway2 }}
+ip route vrf frontdoor {{ local_lan_range }}  255.255.252.0 {{ asa_outside_interface_ip }}
+!
+interface vlan 999
+ description Outside ASA Interface
+ vrf forwarding frontdoor
+ ip address {{ vlan999 }} 255.255.255.252
+ ip nat inside
+ no shut
+!
+interface vlan 998
+ description Inside ASA Interface
+ ip address {{ vlan998 }} 255.255.255.252
+ no shut
+!
+interface gigabitethernet 0/0/0
+ description Circuit 1 DMVPN Interface
+ vrf forwarding frontdoor
+ ip address {{ circuit_1_ip }} 
+ ip nat outside
+ no shut
+!
+interface gigabitethernet 0/0/2
+ description DMVPN Interface
+ vrf forwarding frontdoor
+ ip address {{ circuit_2_ip }}
+ ip nat outside
+ no shut
+!
+interface gigabitethernet 0/1/0
+ description LAN interface
+ switchport mode trunk
+ switchport trunk native vlan 100
+ no shut
+!
+interface gig 0/1/1
+  description Outside ASA Interface
+ switch access vlan 999
+no shut
+!
+interface gig 0/1/2
+  description Inside ASA Interface
+ switch access vlan 998
+no shut
+!
+interface loopback 0
+ description loopback interface
+ ip address {{ local_loopback0_ip }} 255.255.255.0
+!
+router eigrp daikin
+ !
+ address-family ipv4 unicast autonomous-system 100
+  !
+  af-interface default
+   passive-interface
+  exit-af-interface
+  !
+  af-interface Tunnel101
+   summary-address {{ local_lan_range }} 255.255.252.0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Tunnel102
+   summary-address {{ local_lan_range }} 255.255.252.0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface Loopback0
+   no passive-interface
+  exit-af-interface
+  !
+  af-interface vlan998
+   no passive-interface
+  exit-af-interface
+ 
+  topology base
+   no default-information out
+   redistribute connected
+  exit-af-topology
+  network {{ tunnel_101_ip }} 0.0.0.0
+  network {{ tunnel_102_ip }} 0.0.0.0
+  network {{ local_loopback0_ip }} 0.0.0.0
+  network {{ vlan998  }} 0.0.0.0
+ exit-address-family
+!
+crypto key generate rsa gen mod 2048
+!
+access-list 101 permit ip any any
+access-list 102 permit ip any any
+!
+ip dhcp excluded-address {{ dhcp_excluded_range_wired }}
+ip dhcp pool wired_dhcp
+ network {{ dhcp_range_wired }}
+ import all
+ default-router {{ dhcp_default_router_wired }}
+ dns-server {{ internal_dns_server }}
+!
+ip dhcp excluded-address {{ dhcp_excluded_range_management }}
+ip dhcp pool management_dhcp
+ network {{ dhcp_range_management }}
+ import all
+ default-router {{ dhcp_default_router_management }}
+ dns-server {{ internal_dns_server }}
+!
+ip dhcp excluded-address {{ dhcp_excluded_range_wireless }}
+ip dhcp pool wireless_dhcp
+ network {{ dhcp_range_wireless }}
+ import all
+ default-router {{ dhcp_default_router_wireless }}
+ dns-server {{ internal_dns_server }}
+!
+ip dhcp excluded-address {{ dhcp_excluded_range_guest }}
+ip dhcp pool guest_dhcp
+ network {{ dhcp_range_guest }}
+ import all
+ default-router {{ dhcp_default_router_guest }}
+ dns-server {{ internal_dns_server }}
+!
+no ip http server
+no ip http secure-server
+!
+ip nat inside source list 101 interface gig0/0/0 vrf frontdoor overload
+ip nat inside source list 102 interface gig0/0/2 vrf frontdoor overload
+!
+snmp-server community {{ snmp_ro_community }} RO 98
+snmp-server community {{ snmp_rw_community }} RW 99
+!
+access-list 98 permit {{ prime_server }}
+access-list 99 permit {{ prime_server }}
+!
+line con 0
+ session-timeout 5
+ exec-timeout 20 0
+ logging synchronous
+ login local
+ transport output telnet ssh
+ stopbits 1
+line vty 0 15
+ session-timeout 60
+ exec-timeout 30 0
+ login local
+ logging synchronous
+ length 0
+ transport input telnet ssh
+ transport output telnet ssh
+!
+ntp server {{  ntp_server }}
+end

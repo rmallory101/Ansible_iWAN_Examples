@@ -1,0 +1,8 @@
+---
+
+- name: Build Hub Configs
+  hosts: hubs
+  tasks:
+
+    # Create config files
+    - template: src=templates/hub_Template.j2 dest=configurations/hubs/{{ inventory_hostname }}.txt

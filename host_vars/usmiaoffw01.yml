@@ -1,0 +1,23 @@
+---
+
+
+inside:
+    10.195.0.70 255.255.255.252
+    
+outside:
+    10.195.0.66 255.255.255.252
+    
+router_outside:
+    10.195.0.65
+    
+asa_mgmt_ip:
+    10.195.0.12 255.255.255.192
+    
+local_internal_range:
+    10.195.0.0 255.255.252.0
+    
+router_loopback_ip:
+    10.195.255.20
+    
+site_name:
+    Miami
